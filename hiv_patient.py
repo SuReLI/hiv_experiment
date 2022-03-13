@@ -1,4 +1,5 @@
 import numpy as np
+import collections
 
 class HIVPatient:
     """HIV patient simulator
@@ -7,7 +8,7 @@ class HIVPatient:
     The transition() function allows to simulate continuous time dynamics and control.
     The step() function is tailored for the evaluation of Structured Treatment Interruptions.
     """
-    def __init__(self):
+    def __init__(self, clipping=True, logscale=False):
         # state
         self.T1     = 163573. # healthy type 1 cells concentration (cells per mL)
         self.T1star = 11945.  # infected type 1 cells concentration (cells per mL)
@@ -56,8 +57,37 @@ class HIVPatient:
         self.R1 = 20000.
         self.R2 = 20000.
         self.S  = 1000.
+
+        # options
+        self.clipping = clipping # clip the state to the upper and lower bounds (affects the state attributes, which are clipped before being stored in T1, T1star, etc.)
+        self.logscale = logscale # convert state to log10-scale before returning (does not affect the state attributes, which remain stored without the log10 operation)
+        self.T1Upper     = 1e6
+        self.T1starUpper = 5e4
+        self.T2Upper     = 3200.
+        self.T2starUpper = 80.
+        self.VUpper      = 2.5e5
+        self.EUpper      = 353200.
+        self.upper       = np.array([self.T1Upper, self.T1starUpper, self.T2Upper, self.T2starUpper, self.VUpper, self.EUpper])
+        self.T1Lower     = 0.
+        self.T1starLower = 0.
+        self.T2Lower     = 0.
+        self.T2starLower = 0.
+        self.VLower      = 0.
+        self.ELower      = 0.
+        self.lower       = np.array([self.T1Lower, self.T1starLower, self.T2Lower, self.T2starLower, self.VLower, self.ELower])
         return
     
+    def rawstate(self):
+        return np.array([self.T1, self.T1star, self.T2, self.T2star, self.V, self.E])
+
+    def state(self):
+        s = np.array([self.T1, self.T1star, self.T2, self.T2star, self.V, self.E])
+        if(self.clipping):
+            np.clip(s, self.lower, self.upper)
+        if(self.logscale):
+            s = np.log10(s)
+        return s
+
     def reset(self, mode="unhealthy"):
         if mode=="uninfected":
             self.T1     = 1e6
@@ -82,7 +112,7 @@ class HIVPatient:
             self.E      = 353108.
         else:
             print("Patient mode '", mode, "' unrecognized. State unchanged.")
-        return np.array([self.T1, self.T1star, self.T2, self.T2star, self.V, self.E])
+        return self.state()
     
     def der(self, state, action):
         T1 = state[0]
@@ -128,16 +158,21 @@ class HIVPatient:
               - self.S * state[5])
         
     def step(self, a_index):
-        state = np.array([self.T1, self.T1star, self.T2, self.T2star, self.V, self.E])
+        state = self.state()
         action = self.action_set[a_index]
         state2 = self.transition(state,action,5)
         rew = self.reward(state, action, state2)
-        
+        if(self.clipping):
+            np.clip(state2, self.lower, self.upper)
+
         self.T1 = state2[0]
         self.T1star = state2[1]
         self.T2 = state2[2]
         self.T2star = state2[3]
         self.V = state2[4]
         self.E = state2[5]
+
+        if(self.logscale):
+            state2 = np.log10(state2)
         
         return state2, rew, False, None
