@@ -156,6 +156,7 @@ class HIVPatient:
               + self.R1 * action[0]**2 \
               + self.R2 * action[1]**2 \
               - self.S * state[5])
+        return rew
         
     def step(self, a_index):
         state = self.state()
