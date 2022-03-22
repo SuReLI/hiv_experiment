@@ -43,14 +43,6 @@ class ReplayBuffer:
         idx = np.random.randint(len(self.buffer))
         return self.buffer[idx]
 
-    def to_array(self) -> Tuple[np.ndarray, np.ndarray]:
-        x, y = [], []
-        for experience in self.buffer:
-            state, action, reward, _, _ = experience
-            x.append(np.concatenate([state, action]))
-            y.append(reward)
-        return np.array(x), np.array(y)
-
     def populate(
         self,
         patient,
