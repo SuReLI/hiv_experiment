@@ -1,4 +1,6 @@
+import math
 from dataclasses import dataclass
+from typing import Callable, Tuple
 
 import numpy as np
 import torch
@@ -14,8 +16,9 @@ from dqn.q_agent import Agent
 
 @dataclass
 class Epsilon:
-    start: float
-    end: float
+    max: float
+    min: float
+    delay: int
 
 
 @dataclass
@@ -25,7 +28,6 @@ class QLearningCongfig:
     learning_rate: float
     num_episodes: int
     steps_per_episode: int
-    epsilon: Epsilon
     target_update_rate: int
 
 
@@ -75,7 +77,9 @@ class Qlearner:
             lr=self.conf.learning_rate,
         )
 
-    def dqn_loss(self, batch):
+        self.global_step = 0
+
+    def dqn_loss(self, batch: Tuple[np.array, ...], gamma: float, loss_fn: Callable):
         states, actions, rewards, _, next_states = batch
 
         state_batch = torch.tensor(states)
@@ -122,10 +126,15 @@ class Qlearner:
             episode_losses = []
 
             for step in tqdm(range(self.conf.steps_per_episode), unit="batch"):
+
+                if self.global_step > self.conf.epsilon.delay:
+                    epsilon = max(self.conf.min, epsilon - self.epsilon_step)
+
                 reward = self.agent.play_step(
                     self.policy_net,
                     self.epsilon,
                     self.device,
+                    memory,
                 )
                 episode_reward += reward
 

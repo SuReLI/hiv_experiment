@@ -7,8 +7,9 @@ from dqn.hiv_patient import HIVPatient
 
 
 class Agent:
-    def __init__(self, patient: HIVPatient) -> None:
+    def __init__(self, patient: HIVPatient, action_size: int) -> None:
         self.patient = patient
+        self.action_size = action_size
 
         self.state = None
         self.reset()
@@ -17,8 +18,8 @@ class Agent:
         self.state = self.patient.reset()
 
     def get_action(self, net: nn.Module, epsilon: float, device: str) -> int:
-        if np.random.random() > epsilon:
-            action = self.patient.sample_action_space()
+        if np.random.random() < epsilon:
+            action = np.random.randint(self.action_size)
         else:
             state = torch.tensor(np.array([self.state]), device=device)
 
@@ -31,8 +32,8 @@ class Agent:
         self,
         net: nn.Module,
         epsilon: float,
-        device: str,
         replay_buffer: ReplayBuffer,
+        device: str = "cpu",
     ) -> float:
         with torch.no_grad():
             action = self.get_action(net, epsilon, device)
@@ -43,4 +44,7 @@ class Agent:
             replay_buffer.append(exp)
 
             self.state = new_state
-            return reward
+
+            if done:
+                self.reset()
+            return reward, done

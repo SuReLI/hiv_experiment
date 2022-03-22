@@ -4,8 +4,6 @@ from typing import Tuple
 import numpy as np
 from tqdm import tqdm
 
-from dqn.hiv_patient import HIVPatient
-
 Experience = namedtuple(
     "Experience",
     field_names=[
@@ -42,7 +40,7 @@ class ReplayBuffer:
         )
 
     def sample_experience(self) -> Experience:
-        idx = np.random.randint(0, len(self.buffer))
+        idx = np.random.randint(len(self.buffer))
         return self.buffer[idx]
 
     def to_array(self) -> Tuple[np.ndarray, np.ndarray]:
@@ -58,36 +56,16 @@ class ReplayBuffer:
         patient,
         num_episodes,
         steps_per_episode,
-        patient_mode="unhealthy",
-        one_hot=False,
+        action_size,
     ):
         for _ in tqdm(range(num_episodes)):
-            state = patient.reset(mode=patient_mode)
+            state = patient.reset()
             for _ in range(steps_per_episode):
-                act_index = np.random.randint(4)
+                act_index = np.random.randint(action_size)
                 new_state, reward, done, _ = patient.step(act_index)
-                if one_hot:
-                    action = np.zeros(4)
-                    action[act_index] = 1
-                else:
-                    action = act_index
+                action = act_index
                 experience = Experience(state, action, reward, done, new_state)
                 self.append(experience)
                 state = new_state
-
-
-if __name__ == "__main__":
-
-    import torch
-
-    replay_buffer = ReplayBuffer(100)
-    replay_buffer.populate(HIVPatient(), 10, 10)
-
-    states, actions, rewards, _, _ = replay_buffer.sample(batch_size=8)
-
-    print(type(states))
-    print(states.shape)
-
-    print(actions)
-    print(type(actions))
-    print(actions.dtype)
+                if done:
+                    break
