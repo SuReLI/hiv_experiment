@@ -156,8 +156,8 @@ class HIVPatient:
               + self.R1 * action[0]**2 \
               + self.R2 * action[1]**2 \
               - self.S * state[5])
-	return rew
-
+        return rew
+        
     def step(self, a_index):
         state = self.state()
         action = self.action_set[a_index]
@@ -175,5 +175,5 @@ class HIVPatient:
 
         if(self.logscale):
             state2 = np.log10(state2)
-	
+        
         return state2, rew, False, None
