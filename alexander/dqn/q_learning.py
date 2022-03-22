@@ -13,16 +13,9 @@ from dqn.q_agent import Agent
 
 
 @dataclass
-class WarmStart:
-    episodes: int
-    steps_per_episode: int
-
-
-@dataclass
 class Epsilon:
     start: float
     end: float
-    decay: float
 
 
 @dataclass
@@ -32,21 +25,17 @@ class QLearningCongfig:
     learning_rate: float
     num_episodes: int
     steps_per_episode: int
-    warm_start: WarmStart
     epsilon: Epsilon
     target_update_rate: int
 
 
 class DQN(nn.Module):
-    def __init__(
-        self,
-        obs_size: int,
-        action_size: int,
-        hidden_size: int = 128,
-    ):
+    def __init__(self, obs_size: int, action_size: int, hidden_size: int = 128) -> None:
         super().__init__()
         self.net = nn.Sequential(
             nn.Linear(obs_size, hidden_size),
+            nn.ReLU(),
+            nn.Linear(hidden_size, hidden_size),
             nn.ReLU(),
             nn.Linear(hidden_size, action_size),
         )
@@ -58,7 +47,6 @@ class DQN(nn.Module):
 class Qlearner:
     def __init__(
         self,
-        memory: ReplayBuffer,
         conf: QLearningCongfig,
         patient: HIVPatient,
         agent: Agent,
@@ -68,25 +56,15 @@ class Qlearner:
 
         self.patient = patient
         self.agent = agent
-
-        self.memory = memory
-        self.memory.populate(
-            patient=patient,
-            num_episodes=self.conf.warm_start.episodes,
-            steps_per_episode=self.conf.warm_start.steps_per_episode,
-        )
+        self.device = device
 
         self.epsilon = self.conf.epsilon.start
-
-        self.device = device
 
         obs_size = self.patient.get_state_size()
         action_size = self.patient.get_action_size()
 
         self.policy_net = DQN(obs_size, action_size)
         self.target_net = DQN(obs_size, action_size)
-
-        self.agent = Agent(self.patient, self.memory)
 
         self.total_reward = 0
         self.episode_reward = 0
@@ -115,24 +93,24 @@ class Qlearner:
 
         return self.loss_fn(state_action_values, exp_state_action_values)
 
-    def gradient_step(self) -> torch.Tensor:
-        if len(self.memory) < self.conf.batch_size:
+    def gradient_step(self, memory: ReplayBuffer) -> torch.Tensor:
+        if len(memory) < self.conf.batch_size:
             return
 
-        batch = self.memory.sample(self.conf.batch_size)
+        batch = memory.sample(self.conf.batch_size)
         loss = self.dqn_loss(batch)
 
         # Optimize the model
         self.optimizer.zero_grad()
         loss.backward()
 
-        for param in self.policy_net.parameters():
-            param.grad.data.clamp_(-1, 1)
+        # for param in self.policy_net.parameters():
+        #     param.grad.data.clamp_(-1, 1)
 
         self.optimizer.step()
         return loss
 
-    def train(self):
+    def train(self, memory: ReplayBuffer):
         self.patient.reset()
 
         episode_rewards = []
@@ -151,7 +129,7 @@ class Qlearner:
                 )
                 episode_reward += reward
 
-                loss = self.gradient_step()
+                loss = self.gradient_step(memory)
                 episode_losses.append(loss.item())
 
                 if step % self.conf.target_update_rate == 0:
