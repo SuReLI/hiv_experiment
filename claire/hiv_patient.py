@@ -85,7 +85,7 @@ class HIVPatient:
         if(self.clipping):
             np.clip(s, self.lower, self.upper)
         if(self.logscale):
-            s = np.log10(s)
+            s = np.log10(s+1) ### TO BE CHECKED
         return s
 
     def reset(self, mode="unhealthy"):
@@ -174,6 +174,6 @@ class HIVPatient:
         self.E = state2[5]
 
         if(self.logscale):
-            state2 = np.log10(state2)
+            state2 = np.log10(state2+1) ### TO BE CHECKED
         
         return state2, rew, False, None
