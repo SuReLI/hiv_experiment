@@ -122,7 +122,8 @@ class HIVPatient:
             elif extra == "immunity-failure":
                 self.E *= .75
             else:
-                print("Patient extra '", extra, "' unrecognized. State unchanged.")
+                None
+                #print("Patient extra '", extra, "' unrecognized. State unchanged.")
 
         return self.state()
     
