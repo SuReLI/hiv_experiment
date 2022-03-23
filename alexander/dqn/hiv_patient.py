@@ -231,10 +231,3 @@ class HIVPatient:
 
     def get_state_size(self):
         return len(self.state())
-
-
-if __name__ == "__main__":
-
-    patient = HIVPatient()
-    print(patient.sample_action_space())
-    print(len(patient.state()))
