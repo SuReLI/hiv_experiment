@@ -67,6 +67,12 @@ class Agent():
         """
         return a
 
+    def transform_reward(self,r):
+        """
+        applies transform to reward, none by default
+        """
+        return r
+
     def sp_one_step(self, first_step, all_random=False):
         """
         add nb of patients samples (only one step generated) to buffer
@@ -80,6 +86,7 @@ class Agent():
             a = self.get_action(s,all_random)
             s2,r,d,_ = p.step(a)
             a = self.transform_action(a)
+            r = self.transform_reward(r)
             self.buffer.append(s,a,r,s2,d)
 
     def generate_sp(self,all_random=False):
