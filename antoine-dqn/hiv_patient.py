@@ -85,10 +85,10 @@ class HIVPatient:
         if(self.clipping):
             np.clip(s, self.lower, self.upper)
         if(self.logscale):
-            s = np.log10(s)
+            s = np.log10(1 + s)
         return s
 
-    def reset(self, mode="unhealthy"):
+    def reset(self, mode="unhealthy", extras=""):
         if mode=="uninfected":
             self.T1     = 1e6
             self.T1star = 0.
@@ -112,6 +112,18 @@ class HIVPatient:
             self.E      = 353108.
         else:
             print("Patient mode '", mode, "' unrecognized. State unchanged.")
+
+        extras = extras.split(':')
+        for extra in extras:
+            if extra == "small-infection":
+                self.T1star = 1e-4
+                self.T2star = 1e-4
+                self.V      = 1.
+            elif extra == "immunity-failure":
+                self.E *= .75
+            elif extra != "":
+                print("Patient extra '", extra, "' unrecognized. State unchanged.")
+
         return self.state()
     
     def der(self, state, action):
@@ -156,7 +168,7 @@ class HIVPatient:
               + self.R1 * action[0]**2 \
               + self.R2 * action[1]**2 \
               - self.S * state[5])
-	return rew
+        return np.log10(1 + rew) if rew >= 0 else -np.log10(-rew)
 
     def step(self, a_index):
         state = self.state()
@@ -174,6 +186,6 @@ class HIVPatient:
         self.E = state2[5]
 
         if(self.logscale):
-            state2 = np.log10(state2)
-	
+            state2 = np.log10(1 + state2)
+
         return state2, rew, False, None
