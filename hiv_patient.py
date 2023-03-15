@@ -83,7 +83,7 @@ class HIVPatient:
     def state(self):
         s = np.array([self.T1, self.T1star, self.T2, self.T2star, self.V, self.E])
         if(self.clipping):
-            np.clip(s, self.lower, self.upper)
+            np.clip(s, self.lower, self.upper, out=s)
         if(self.logscale):
             s = np.log10(s)
         return s
@@ -156,7 +156,7 @@ class HIVPatient:
               + self.R1 * action[0]**2 \
               + self.R2 * action[1]**2 \
               - self.S * state[5])
-	return rew
+        return rew
 
     def step(self, a_index):
         state = self.state()
@@ -164,7 +164,7 @@ class HIVPatient:
         state2 = self.transition(state,action,5)
         rew = self.reward(state, action, state2)
         if(self.clipping):
-            np.clip(state2, self.lower, self.upper)
+            np.clip(state2, self.lower, self.upper, out=state2)
 
         self.T1 = state2[0]
         self.T1star = state2[1]
@@ -175,5 +175,5 @@ class HIVPatient:
 
         if(self.logscale):
             state2 = np.log10(state2)
-	
+    
         return state2, rew, False, None
