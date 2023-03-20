@@ -1,7 +1,7 @@
 import numpy as np
 import collections
-import gym
-from gym import spaces
+import gymnasium as gym
+from gymnasium import spaces
 
 class HIVPatientRay(gym.Env):
     """HIV patient simulator
@@ -190,4 +190,5 @@ class HIVPatientRay(gym.Env):
         if(self.logscale):
             state2 = np.log10(state2)
     
-        return state2, rew, False, None
+        # return empty dict as info for compatibility with gym
+        return state2, rew, False, {}
