@@ -1,0 +1,5 @@
+Extra_trees -> implémentation fonctionnelle de l'article de Ernst
+Extra_trees_v2 -> implémentation de patients aléatoires et d'une dynamique aléatoire pour faire du RL robuste
+hiv_patient -> classe du simulateur
+online tree -> tentative de RL online avec des extra trees
+Autres notebooks -> tests variés
