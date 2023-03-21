@@ -14,6 +14,7 @@ class HIVPatientGym(HIVPatient, gym.Env):
         self.observation_space = spaces.Box(
             low=float("-inf"), high=float("inf"), shape=(6,), dtype=np.float32
         )
+        self._counter_step = 0
 
     def step(self, a_index):
         state, reward, done, info = super().step(a_index)
@@ -21,7 +22,16 @@ class HIVPatientGym(HIVPatient, gym.Env):
         if info is None:
             info = {}
 
+        self._counter_step += 1
+        if self._counter_step >= 200:
+            self._counter_step = 0
+            done = True
+
         return state, reward, done, info
+
+    def reset(self, *args, **kwargs):
+        self._counter_step = 0
+        return super().reset(*args, **kwargs)
 
     def render(self, mode="human"):
         pass
